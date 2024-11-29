@@ -9,10 +9,7 @@ dotenv.config();
 const port = process.env.PORT;
 const app: Express = express();
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Express + TypeScript Server");
-});
-
+app.use(express.json());
 app.use("/api/auth", authRoutes);
 
 app.listen(port, () => {
