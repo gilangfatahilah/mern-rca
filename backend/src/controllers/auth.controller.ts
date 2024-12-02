@@ -1,10 +1,11 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 
 import User from "@/models/user.model";
 import { generateToken } from "@/lib/utils";
+import cloudinary from "@/lib/cloudinary";
 
-export const signUp = async (req: Request, res: Response): Promise<void> => {
+export const signUp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { fullName, email, password } = req.body;
 
     try {
@@ -30,12 +31,7 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
         const newUser = new User({ fullName, email, password: hashedPassword });
 
         if (newUser) {
-            const payload = {
-                userId: newUser._id as string,
-                email: newUser.email,
-            }
-
-            generateToken(payload, res);
+            generateToken(newUser._id as string, res);
             await newUser.save();
 
             res.status(201).json({
@@ -57,23 +53,88 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
     } catch (error) {
         console.log("Error in sign up controller " + error)
 
-        if (error instanceof Error && process.env.NODE_ENV === "development") {
-            res.status(500).json({
-                message: "Internal server error",
-                error: error.message
-            });
-        } else {
-            res.status(500).json({
-                message: "Unknown server error"
-            });
-        }
+        next(error)
     }
 }
 
-export const login = (req: Request, res: Response) => {
-    res.send("login route")
+export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { email, password } = req.body;
+
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            res.status(400).json({ message: "Invalid credentials" });
+
+            return;
+        }
+
+        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+        if (!isPasswordCorrect) {
+            res.status(400).json({ message: "Invalid credentials" });
+
+            return;
+        }
+
+        generateToken(user._id as string, res);
+
+        res.status(200).json({
+            success: true,
+            message: "Logged in successfully",
+            data: {
+                _id: user._id,
+                fullName: user.fullName,
+                email: user.email,
+                profilePic: user.profilePic
+            }
+        });
+    } catch (error) {
+        console.log("Error in login controller " + error)
+
+        next(error)
+    }
 }
 
-export const logout = (req: Request, res: Response) => {
-    res.send("logout route")
+export const updateProfile = async (req: Request, res: Response, next: NextFunction) => {
+    const { profilePic } = req.body;
+    const userId = req.user._id;
+
+    try {
+        if (!profilePic) {
+            res.status(400).json({ success: false, message: "Profile pic is required" });
+
+            return;
+        }
+
+        const uploadResponse = await cloudinary.uploader.upload(profilePic);
+
+        const updatedUser = User.findByIdAndUpdate(userId, {
+            profilePic: uploadResponse.secure_url,
+        }, { new: true });
+
+        res.status(200).json({ success: true, message: "User successfully updated", data: updatedUser })
+    } catch (error) {
+        console.log("Error in update profile controller" + error);
+
+        next(error);
+    }
+}
+
+export const logout = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        res.cookie("jwt", "", { maxAge: 0 });
+        res.status(200).json({ message: "Logged out successfully" })
+    } catch (error) {
+        console.log("Error in logout controller " + error)
+
+        next(error)
+    }
+}
+
+export const checkAuth = (req: Request, res: Response, next: NextFunction) => {
+    try {
+        res.status(200).json(req.user);
+    } catch (error) {
+        console.log("Error in check auth controller" + error)
+        next(error);
+    }
 }
