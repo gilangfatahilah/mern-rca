@@ -26,31 +26,31 @@ const App = () => {
     );
 
   return (
-    <div>
+    <>
       <Navbar />
 
       <Routes>
         <Route
           path="/"
-          element={authUser ? <HomePage /> : <Navigate to="/login" />}
+          element={authUser ? <HomePage /> : <Navigate to="/signin" />}
         />
         <Route
           path="/signup"
           element={!authUser ? <SignUpPage /> : <Navigate to="/" />}
         />
         <Route
-          path="/login"
+          path="/signin"
           element={!authUser ? <LoginPage /> : <Navigate to="/" />}
         />
         <Route path="/settings" element={<SettingsPage />} />
         <Route
           path="/profile"
-          element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
+          element={authUser ? <ProfilePage /> : <Navigate to="/signin" />}
         />
       </Routes>
 
-      <Toaster />
-    </div>
+      <Toaster position="bottom-right" />
+    </>
   );
 };
 
