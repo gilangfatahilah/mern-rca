@@ -8,7 +8,9 @@ export interface AuthUser {
     _id: string,
     fullName: string,
     email: string,
-    profilePic?: string
+    profilePic?: string,
+    createdAt: string,
+    updateAt?: string,
 }
 
 interface AuthStore {
@@ -21,6 +23,7 @@ interface AuthStore {
     login: (formData: Omit<User, "fullName">) => Promise<void>,
     signUp: (formData: User) => Promise<void>,
     logout: () => Promise<void>,
+    updateProfile: (formData: { profilePic: string }) => Promise<void>
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -95,6 +98,26 @@ export const useAuthStore = create<AuthStore>((set) => ({
             } else {
                 toast.error("Unexpected error occurred !");
             }
+        }
+    },
+
+    updateProfile: async (formData: { profilePic: string }) => {
+        set({ isUpdatingProfile: true });
+
+        try {
+            console.log(formData);
+
+            const { data } = await axiosInstance.put("/auth/update-profile", formData);
+            set({ authUser: data.data });
+            toast.success("Profile updated successfully.")
+        } catch (error) {
+            if (error instanceof AxiosError) {
+                toast.error(error.response?.data.message + ", Please try again !");
+            } else {
+                toast.error("Unexpected error occurred !");
+            }
+        } finally {
+            set({ isUpdatingProfile: false })
         }
     }
 }))
