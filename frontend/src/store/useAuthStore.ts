@@ -15,6 +15,7 @@ export interface AuthUser {
 
 interface AuthStore {
     authUser: AuthUser | null,
+    onlineUsers: string[],
     isSigningUp: boolean,
     isLoggingIn: boolean,
     isUpdatingProfile: boolean,
@@ -28,6 +29,7 @@ interface AuthStore {
 
 export const useAuthStore = create<AuthStore>((set) => ({
     authUser: null,
+    onlineUsers: [],
     isSigningUp: false,
     isLoggingIn: false,
     isUpdatingProfile: false,
