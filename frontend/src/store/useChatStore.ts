@@ -5,10 +5,13 @@ import { AxiosError } from "axios";
 import { AuthUser } from "./useAuthStore";
 
 interface Message {
+    _id: string
     senderId: string
     receiverId: string
     text: string
     image?: string
+    createdAt: Date
+    updatedAt: Date
 }
 
 interface ChatStore {
@@ -19,10 +22,11 @@ interface ChatStore {
     isMessagesLoading: boolean,
     getUsers: () => Promise<void>,
     getMessages: (userId: string) => Promise<void>
-    setSelectedUser: (user: AuthUser) => void
+    setSelectedUser: (user: AuthUser | null) => void
+    sendMessage: (message: { text: string, image: string | null }) => Promise<void>
 }
 
-export const useChatStore = create<ChatStore>((set) => ({
+export const useChatStore = create<ChatStore>((set, get) => ({
     messages: [],
     users: [],
     selectedUser: null,
@@ -60,6 +64,23 @@ export const useChatStore = create<ChatStore>((set) => ({
             }
         } finally {
             set({ isMessagesLoading: false })
+        }
+    },
+
+    sendMessage: async (message) => {
+        const { selectedUser, messages } = get();
+
+        if (!selectedUser) return;
+
+        try {
+            const { data } = await axiosInstance.post(`/messages/send/${selectedUser._id}`, message);
+            set({ messages: [...messages, data] });
+        } catch (error) {
+            if (error instanceof AxiosError) {
+                toast.error(error.response?.data.message + ", Please try ag !ain");
+            } else {
+                toast.error("Unexpected error occurred !");
+            }
         }
     },
 
