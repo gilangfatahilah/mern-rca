@@ -1,8 +1,9 @@
-import express, { Express } from "express";
+import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import cors from "cors";
+import path from "path";
 
 import { connectDB } from "@/lib/db";
 import authRoutes from "@/routes/auth.route";
@@ -13,6 +14,7 @@ import { app, server } from "./lib/socket";
 dotenv.config();
 
 const port = process.env.PORT;
+const __dirname = path.resolve();
 
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
@@ -26,6 +28,14 @@ app.use(cors({
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use(errorHandler);
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
+  });
+}
 
 server.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`);
