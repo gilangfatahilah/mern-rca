@@ -1,22 +1,42 @@
 import { useEffect, useRef } from "react";
+import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
+import { formatDate } from "../lib/utils";
+
 import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
 import MessageSkeleton from "./Skeleton/MessageSkeleton";
-import { useAuthStore } from "../store/useAuthStore";
-import { formatDate } from "../lib/utils";
 
 const ChatContainer = () => {
-  const { messages, getMessages, isMessagesLoading, selectedUser } =
-    useChatStore();
+  const {
+    messages,
+    getMessages,
+    isMessagesLoading,
+    subscribeToMessages,
+    unsubscribeToMessages,
+    selectedUser,
+  } = useChatStore();
+
   const { authUser } = useAuthStore();
   const messageEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (selectedUser) {
-      getMessages(selectedUser._id);
+    if (selectedUser?._id) getMessages(selectedUser._id);
+    subscribeToMessages();
+
+    return () => unsubscribeToMessages();
+  }, [
+    selectedUser?._id,
+    getMessages,
+    subscribeToMessages,
+    unsubscribeToMessages,
+  ]);
+
+  useEffect(() => {
+    if (messageEndRef.current && messages) {
+      messageEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [selectedUser, getMessages]);
+  }, [messages]);
 
   if (isMessagesLoading)
     return (
@@ -32,9 +52,9 @@ const ChatContainer = () => {
       <ChatHeader />
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
+        {messages.map((message, idx) => (
           <div
-            key={message._id}
+            key={message._id ?? idx}
             className={`chat ${
               message.senderId === authUser?._id ? "chat-end" : "chat-start"
             }`}
@@ -59,7 +79,7 @@ const ChatContainer = () => {
               </time>
             </div>
 
-            <div className="chat-bubble">
+            <div className="chat-bubble flex flex-col">
               {message.image && (
                 <img
                   src={message.image}

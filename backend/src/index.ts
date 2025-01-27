@@ -8,11 +8,11 @@ import { connectDB } from "@/lib/db";
 import authRoutes from "@/routes/auth.route";
 import messageRoutes from "@/routes/message.route";
 import errorHandler from "@/middleware/error-handler.middleware";
+import { app, server } from "./lib/socket";
 
 dotenv.config();
 
 const port = process.env.PORT;
-const app: Express = express();
 
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
@@ -27,7 +27,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use(errorHandler);
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`);
   connectDB();
 });
