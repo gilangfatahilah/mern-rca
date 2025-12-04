@@ -31,7 +31,7 @@ interface AuthStore {
   disconnectSocket: () => void;
 }
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   authUser: null,
@@ -141,7 +141,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
     if (!authUser || get().socket?.connected) return;
 
-    const socket = io(BASE_URL, {
+    const socket = io(SOCKET_URL, {
       withCredentials: true,
       transports: ['websocket'],
     });
