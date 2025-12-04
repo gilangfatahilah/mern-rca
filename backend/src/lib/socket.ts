@@ -1,7 +1,7 @@
 import { Server } from "socket.io";
 import http from "http";
 import express from "express";
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
 const app = express();
 const server = http.createServer(app);
@@ -11,14 +11,14 @@ const io = new Server(server, {
     origin: process.env.CLIENT_URL,
     credentials: true,
   },
-  transports: ['websocket']
+  transports: ["websocket"],
 });
 
 const usersSocket: Record<string, string> = {};
 
 const getReceiverSocketId = (userId: string) => {
   return usersSocket[userId];
-}
+};
 
 io.use((socket, next) => {
   try {
@@ -42,19 +42,21 @@ io.use((socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  console.log("User connected", socket.id);
+  const userId = socket.data.userId;
 
-  const userId = socket.handshake.query.userId as string;
+  console.log("User connected:", userId);
 
-  if (userId) usersSocket[userId] = socket.id;
+  if (userId) {
+    usersSocket[userId] = socket.id;
+  }
 
-  io.emit("getOnlineUsers", Object.keys(usersSocket))
+  io.emit("getOnlineUsers", Object.keys(usersSocket));
 
   socket.on("disconnect", () => {
-    console.log("User disconnected", socket.id)
+    console.log("User disconnected:", userId);
     delete usersSocket[userId];
-    io.emit("getOnlineUsers", Object.keys(usersSocket))
-  })
-})
+    io.emit("getOnlineUsers", Object.keys(usersSocket));
+  });
+});
 
-export { io, app, server, getReceiverSocketId }
+export { io, app, server, getReceiverSocketId };
